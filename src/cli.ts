@@ -2,12 +2,13 @@ import { Command } from "commander";
 import fs from "fs";
 import glob from "glob";
 import prettier from "prettier";
+import simpleGit from "simple-git";
 
 import { convert } from "./convert";
 import { detectJsx } from "./detect-jsx";
 import { version } from "../package.json";
 
-export const cli = (argv) => {
+export const cli = async (argv) => {
   const program = new Command();
   program
     .version(version)
@@ -47,7 +48,12 @@ export const cli = (argv) => {
       "avoid"
     )
     .option("--print-width [width]", "line width (depends on --prettier)", 80)
-    .option("--write", "write output to disk instead of STDOUT")
+    .option(
+      "--write [new|replace|none]",
+      "write output to disk instead of STDOUT",
+      /new|replace|none/,
+      "none"
+    )
     .option("--delete-source", "delete the source file");
 
   program.parse(argv);
@@ -99,12 +105,24 @@ export const cli = (argv) => {
     try {
       const outCode = convert(inCode, options);
 
-      if (program.write) {
-        const extension = detectJsx(inCode) ? ".tsx" : ".ts";
-        const outFile = file.replace(/\.jsx?$/, extension);
-        fs.writeFileSync(outFile, outCode);
-      } else {
-        console.log(outCode);
+      switch (program.write) {
+        case "new": {
+          const extension = detectJsx(inCode) ? ".tsx" : ".ts";
+          const outFile = file.replace(/\.jsx?$/, extension);
+          fs.writeFileSync(outFile, outCode);
+          break;
+        }
+        case "replace": {
+          const extension = detectJsx(inCode) ? ".tsx" : ".ts";
+          const outFile = file.replace(/\.jsx?$/, extension);
+          await _maybeMoveWithGit(inFile, outFile);
+          fs.writeFileSync(outFile, outCode);
+          break;
+        }
+        case "none":
+        default:
+          console.log(outCode);
+          break;
       }
 
       if (program.deleteSource) {
@@ -116,3 +134,12 @@ export const cli = (argv) => {
     }
   }
 };
+
+async function _maybeMoveWithGit(from, to) {
+  try {
+    const git = simpleGit({ baseDir: process.cwd() });
+    await git.mv(from, to);
+  } catch (error) {
+    fs.renameSync(from, to);
+  }
+}

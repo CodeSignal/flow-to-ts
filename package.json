@@ -21,6 +21,7 @@
     "commander": "^2.19.0",
     "glob": "^7.1.6",
     "prettier": "2.2.1",
+    "simple-git": "^3.5.0",
     "trim-right": "^1.0.1"
   },
   "devDependencies": {
