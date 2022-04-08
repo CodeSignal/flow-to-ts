@@ -32,14 +32,14 @@ describe("cli", () => {
     tmpobj.removeCallback();
   });
 
-  it("should exit with code one when no files have been provided", () => {
+  it("should exit with code one when no files have been provided", async () => {
     // Arrange
     mockConsole();
     const mockExit = mockProcess.mockProcessExit();
     const mockStdout = mockProcess.mockProcessStdout();
 
     // Act
-    cli(["node", path.join(__dirname, "../flow-to-ts.js")]);
+    await cli(["node", path.join(__dirname, "../flow-to-ts.js")]);
 
     // Assert
     expect(mockExit).toHaveBeenCalledWith(1);
@@ -47,56 +47,56 @@ describe("cli", () => {
     mockStdout.mockRestore();
   });
 
-  it("should console.log output", () => {
+  it("should console.log output", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
     fs.writeFileSync(inputPath, "const a: number = 5;", "utf-8");
 
     // Act
-    cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
+    await cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
 
     // Assert
     expect(console.log).toHaveBeenCalledWith("const a: number = 5;");
   });
 
-  it("should not write a file", () => {
+  it("should not write a file", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
     fs.writeFileSync(inputPath, "const a: number = 5;", "utf-8");
 
     // Act
-    cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
+    await cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
 
     // Assert
     const outputPath = path.join(tmpdir, "test.ts");
     expect(fs.existsSync(outputPath)).toBe(false);
   });
 
-  it("should error any files with errors", () => {
+  it("should error any files with errors", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
     fs.writeFileSync(inputPath, "?", "utf-8");
 
     // Act
-    cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
+    await cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
 
     // Assert
     expect(console.error).toHaveBeenCalledWith(`error processing ${inputPath}`);
   });
 
-  it("should write a file", () => {
+  it("should write a file", async () => {
     // Arrange
     const inputPath = path.join(tmpdir, "test.js");
     fs.writeFileSync(inputPath, "const a: number = 5;", "utf-8");
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
-      "--write",
+      "--write=new",
       inputPath,
     ]);
 
@@ -104,7 +104,7 @@ describe("cli", () => {
     expect(fs.existsSync(path.join(tmpdir, "test.ts"))).toBe(true);
   });
 
-  it("should write many files with a glob", () => {
+  it("should write many files with a glob", async () => {
     // Arrange
     const inputGlob = path.join(tmpdir, "*.js");
     fs.writeFileSync(
@@ -119,10 +119,10 @@ describe("cli", () => {
     );
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
-      "--write",
+      "--write=new",
       inputGlob,
     ]);
 
@@ -131,17 +131,17 @@ describe("cli", () => {
     expect(fs.existsSync(path.join(tmpdir, "bar.ts"))).toBe(true);
   });
 
-  it("should delete the original file", () => {
+  it("should delete the original file", async () => {
     // Arrange
     const inputPath = path.join(tmpdir, "test.js");
     const outputPath = path.join(tmpdir, "test.ts");
     fs.writeFileSync(inputPath, "const a: number = 5;", "utf-8");
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
-      "--write",
+      "--write=new",
       "--delete-source",
       inputPath,
     ]);
@@ -151,7 +151,7 @@ describe("cli", () => {
     expect(fs.existsSync(inputPath)).toBe(false);
   });
 
-  it("should delete many original files", () => {
+  it("should delete many original files", async () => {
     // Arrange
     const inputGlob = path.join(tmpdir, "*.js");
     fs.writeFileSync(
@@ -166,10 +166,10 @@ describe("cli", () => {
     );
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
-      "--write",
+      "--write=new",
       "--delete-source",
       inputGlob,
     ]);
@@ -181,7 +181,7 @@ describe("cli", () => {
     expect(fs.existsSync(path.join(tmpdir, "bar.js"))).toBe(false);
   });
 
-  it("should convert jsx to tsx and delete many original files", () => {
+  it("should convert jsx to tsx and delete many original files", async () => {
     // Arrange
     const inputGlob = path.join(tmpdir, "*.js?(x)");
     fs.writeFileSync(
@@ -201,10 +201,10 @@ describe("cli", () => {
     );
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
-      "--write",
+      "--write=new",
       "--delete-source",
       inputGlob,
     ]);
@@ -220,17 +220,17 @@ describe("cli", () => {
     expect(fs.existsSync(path.join(tmpdir, "baz.jsx"))).toBe(false);
   });
 
-  it("should write to the file", () => {
+  it("should write to the file", async () => {
     // Arrange
     const inputPath = path.join(tmpdir, "test.js");
     const outputPath = path.join(tmpdir, "test.ts");
     fs.writeFileSync(inputPath, "const a: number = 5;", "utf-8");
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
-      "--write",
+      "--write=new",
       inputPath,
     ]);
 
@@ -239,7 +239,7 @@ describe("cli", () => {
     expect(output).toBe("const a: number = 5;");
   });
 
-  it("should not attempt to load the prettier config file", () => {
+  it("should not attempt to load the prettier config file", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
@@ -247,13 +247,13 @@ describe("cli", () => {
     const syncSpy = jest.spyOn(prettier.resolveConfig, "sync");
 
     // Act
-    cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
+    await cli(["node", path.join(__dirname, "../flow-to-ts.js"), inputPath]);
 
     // Assert
     expect(syncSpy).not.toHaveBeenCalled();
   });
 
-  it("should attempt to load the prettier config file", () => {
+  it("should attempt to load the prettier config file", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
@@ -261,7 +261,7 @@ describe("cli", () => {
     const syncSpy = jest.spyOn(prettier.resolveConfig, "sync");
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
       "--prettier",
@@ -272,7 +272,7 @@ describe("cli", () => {
     expect(syncSpy).toHaveBeenCalled();
   });
 
-  it("should exit with code one when parsing the prettier config fails", () => {
+  it("should exit with code one when parsing the prettier config fails", async () => {
     // Arrange
     mockConsole();
     const mockExit = mockProcess.mockProcessExit();
@@ -285,7 +285,7 @@ describe("cli", () => {
     });
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
       "--prettier",
@@ -298,7 +298,7 @@ describe("cli", () => {
     mockStdout.mockRestore();
   });
 
-  it("should use prettier options from file when a config file is found", () => {
+  it("should use prettier options from file when a config file is found", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
@@ -310,7 +310,7 @@ describe("cli", () => {
     syncSpy.mockReturnValueOnce(prettierConfig);
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
       "--prettier",
@@ -321,7 +321,7 @@ describe("cli", () => {
     expect(console.log).toHaveBeenCalledWith("const a: string = 'string';");
   });
 
-  it("should use default prettier options when no config file is found", () => {
+  it("should use default prettier options when no config file is found", async () => {
     // Arrange
     mockConsole();
     const inputPath = path.join(tmpdir, "test.js");
@@ -330,7 +330,7 @@ describe("cli", () => {
     syncSpy.mockReturnValueOnce(null);
 
     // Act
-    cli([
+    await cli([
       "node",
       path.join(__dirname, "../flow-to-ts.js"),
       "--prettier",
