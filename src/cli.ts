@@ -22,6 +22,10 @@ export const cli = async (argv) => {
       "add semi-colons, defaults to 'false' (depends on --prettier)"
     )
     .option(
+      "--keep-untyped",
+      "do not change files that do not have @flow at the top"
+    )
+    .option(
       "--single-quote",
       "use single quotes instead of double quotes, defaults to 'false' (depends on --prettier)"
     )
@@ -101,6 +105,11 @@ export const cli = async (argv) => {
   for (const file of files) {
     const inFile = file;
     const inCode = fs.readFileSync(inFile, "utf-8");
+
+    if (program.keepUntyped && !inCode.startsWith("// @flow")) {
+      console.log(`Skipping ${inFile} as it is not typed`);
+      continue;
+    }
 
     try {
       const outCode = convert(inCode, options);
